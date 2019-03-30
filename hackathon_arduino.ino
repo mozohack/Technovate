@@ -1,13 +1,15 @@
 #include <ESP8266WiFi.h>
 #include <FirebaseArduino.h>
 #include <Wire.h>
-#include "RTClib.h"
-RTC_DS3231 rtc;
+//#include "RTClib.h"
+//RTC_DS3231 rtc;
 #define FIREBASE_HOST "traffic-managment.firebaseio.com"
 #define FIREBASE_AUTH "HSGz0aBiNt9xwC43Uj4j7huV5v6y5wYTaVwLyBXJ"
-#define WIFI_SSID "Incubation_center"
+#define WIFI_SSID "Incubation"
 #define WIFI_PASSWORD "SRMIPcenter"
 
+
+//pin declaration
 int Lane1[] = {D0,D4}; // Lane 1 Red and Green NORTH
 int Lane2[] = {D1,D5};// Lane 2 Red and Green SOUTH
 int Lane3[] = {D2,D6};// Lane 3 Red and Green LEFT
@@ -15,12 +17,15 @@ int Lane4[] = {D3,D7};// Lane 4 Red and Green RIGHT
 
 int mat[2][4]={0};//matrix for the objects
 int d_time=30000; //default time
-int priority[4]={0}; //app 
+int priority[4]={-1,-1,-1,-1}; //priority lane
 int density[4]={0}; //data analysis
-int last_time=0;
+int last=0;
 
 
 byte sensorPin = A0;
+float t;
+
+
 void lightup(int lane)
 {
   //fetch data from firebase
@@ -131,94 +136,62 @@ void setup()
   Serial.println();
   Serial.print("connected: ");
   Serial.println(WiFi.localIP());
-  if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    while (1);
-  }
-
-  
+//  if (! rtc.begin()) {
+//    Serial.println("Couldn't find RTC");
+//    while (1);
+//  }
+//
+//  
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
 
 }
 void loop()
 {
-//    StaticJsonBuffer<200> jsonBuffer;
-//    JsonObject & root=jsonBuffer.createObject();
-    //reading values: priority
-    //ID 1
-    
-    
-  
-//    root["Time"]=timee;
-//    root["Value"]=sensorvalue;
-//    Firebase.push(datee,root);
 
-    int first=1;
-    int v[4]={0,1,2,3};
-    loop(density)
+  int l1=Firebase.getInt("Priority/lane 1/count");
+  int l2=Firebase.getInt("Priority/lane 2/count");
+  int l3=Firebase.getInt("Priority/lane 3/count");
+  int l4=Firebase.getInt("Priority/lane 4/count");
+
+  //assigning according to the priority
+  int c=0;
+   if(l1!=-1)
+   {
+    priority[l1]=1;
+    c++;
+   }
+   if(l2!=-1)
+   {
+    priority[l2]=2;
+    c++;
+    
+   }
+   if(l3!=-1)
+   {
+    priority[l3]=3;
+    c++;
+   }
+   if(l4!=-1)
+   {
+    priority[l4]=4;
+    c++;
+   }
+    int i;
+    for(i=0;i<c;i++)//needed to be changed 
     {
-      if(d1-30>0)
-      {
-        mat[0][1]=d_time+(d1-30)*1000;
-      }
-     
-    }
-    loop(priority)//needed to be changed 
-    {
-      if(priority == 1)
-      {
-        mat[1][0]=first;
-        first++; 
-      }
-      else if(priority == 2)
-      {
-        mat[1][1]=first; 
-     
-        first++;
-      }
-      else if(priority == 3)
-      {
-        mat[1][2]=first;
-        first++; 
-      }
-      else if(priority == 4)
-      {
-        mat[1][4]=first ; 
-        first++;
-      } 
+      lightup(priority[i]);
+      last=priority[i];
       
     }
-    int temp;
-    for(int i=0 ; i<3;i++)
-    {
-      for(int j=0; j<4-i-1;j++)
-      {
-        if(mat[1][j]<mat[1][j+1])
-        {
-          temp=v[j];
-          v[j]=v[j+1];
-          v[j+1]=temp;
-        }
-      }
-    }
-
-    for(int i=0;i<4;i++)
-    {
-      int last=v[i];
-      lightup(mat[0][last]);
-      mat[1][last]=0;
-    }
-
-    
     if(last == 4)
     {
       last=0;
-      lightup(mat[0][last]);
+      lightup(last);
     }
     else
     {
       last++;
-      lightup(mat[0][last]);
+      lightup(last);
     }
     
  
