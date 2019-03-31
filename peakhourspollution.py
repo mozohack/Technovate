@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Mar 31 11:18:08 2019
-
-@author: Punit
-"""
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import csv
@@ -14,7 +7,7 @@ x = []
 y = []
 t = []
 n=0
-with open('C:\\Users\\Punit\\Desktop\\peakhourspollutions.csv') as csvfile:
+with open('peakhourspollutions.csv') as csvfile:
     plots = csv.reader(csvfile , delimiter=',')
     for row in plots:
         if(n==0):
@@ -32,12 +25,13 @@ for i in x:
 for i in y:
     n.append(int(i))
     
-print(m)
-print(n)
 
 df1 = pd.DataFrame({ 'high' : m , 'low' : n}, index= t)
 
 lines = df1.plot.line()
 
-    
-    
+lines.set_xlabel("Peak hours pollution visualisation")
+lines.set_ylabel("Atmospheric PPM")
+
+fig = lines.get_figure()
+fig.savefig("peakhourspollution.jpg")
